@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 import uuid
 
-from sqlalchemy import Date, DateTime, String, Text
+from sqlalchemy import Date, DateTime, String, Text, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -31,7 +31,9 @@ class Deceased(Base):
     burial_date: Mapped[date] = mapped_column(Date, nullable=False)
     sector: Mapped[str] = mapped_column(String(120), nullable=False)
     row: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    grave_number: Mapped[str] = mapped_column(String(120), nullable=False)
+    grave_number: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    map_x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    map_y: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)

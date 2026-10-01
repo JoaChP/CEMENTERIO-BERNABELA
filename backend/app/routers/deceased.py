@@ -54,6 +54,11 @@ def export_records_pdf(filters: RecordFilters = Depends(), session: Session = De
     })
 
 
+@router.get("/map/records", response_model=list[DeceasedResponse])
+def map_records(session: Session = Depends(get_session)):
+    return session.scalars(select(Deceased).order_by(Deceased.full_name, Deceased.id)).all()
+
+
 @router.get("/{record_id}", response_model=DeceasedResponse)
 def get_deceased(
     record_id: str,

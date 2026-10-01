@@ -41,6 +41,7 @@ import {
   X,
 } from 'lucide-react'
 import { api } from './api.js'
+import SatellitePage, { SatelliteMap } from './satellite.jsx'
 
 const CONTACT = {
   email: import.meta.env.VITE_CONTACT_EMAIL || '',
@@ -61,6 +62,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/admin/records" replace /> },
           { path: 'records', element: <RecordsPage /> },
+          { path: 'map', element: <SatellitePage /> },
           { path: 'deceased/new', element: <DeceasedForm /> },
           { path: 'deceased/:id', element: <RecordDetail /> },
           { path: 'deceased/:id/edit', element: <DeceasedForm /> },
@@ -277,6 +279,7 @@ function AdminLayout() {
           <span className="sidebar-label">ADMINISTRACIÓN</span>
           <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>
           <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
+          <NavLink to="/admin/map" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><MapPin size={17} /> Ubicación de nichos</NavLink>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
         <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
@@ -408,7 +411,7 @@ function RecordsPage() {
 }
 
 const EMPTY_RECORD = {
-  full_name: '', known_as: '', date_of_birth: '', date_of_death: '', burial_date: '', sector: '', row: '', grave_number: '', notes: '',
+  full_name: '', known_as: '', date_of_birth: '', date_of_death: '', burial_date: '', sector: '', row: '', grave_number: '', notes: '', map_x: '', map_y: '',
 }
 
 function DeceasedForm() {
@@ -495,7 +498,7 @@ function DeceasedForm() {
     if (!form.date_of_death) issues.date_of_death = 'La fecha de fallecimiento es obligatoria.'
     if (!form.burial_date) issues.burial_date = 'La fecha de sepultura es obligatoria.'
     if (!form.sector.trim()) issues.sector = 'Ingresá el sector.'
-    if (!form.grave_number.trim()) issues.grave_number = 'Ingresá el número de tumba o nicho.'
+    if ((form.map_x === '') !== (form.map_y === '')) issues.map_x = 'Completá ambas coordenadas o quitá el punto del plano.'
     if (form.date_of_birth && form.date_of_death && form.date_of_birth > form.date_of_death) issues.date_of_birth = 'La fecha de nacimiento no puede ser posterior al fallecimiento.'
     if (form.date_of_death && form.burial_date && form.burial_date < form.date_of_death) issues.burial_date = 'La fecha de sepultura no puede ser anterior al fallecimiento.'
     setValidation(issues)
@@ -553,8 +556,9 @@ function DeceasedForm() {
           <div className="form-grid">
             <FormField label="Sector" name="sector" value={form.sector} onChange={updateField} required error={validation.sector} placeholder="Ej. Sector A" />
             <FormField label="Fila" name="row" value={form.row} onChange={updateField} placeholder="Opcional" />
-            <FormField label="Número de tumba o nicho" name="grave_number" value={form.grave_number} onChange={updateField} required error={validation.grave_number} placeholder="Ej. 014-B" className="span-two" />
+            <FormField label="Número de tumba o nicho (opcional)" name="grave_number" value={form.grave_number} onChange={updateField} placeholder="Ej. 014-B" className="span-two" />
           </div>
+          <div className="form-map"><h3>Ubicación en el plano (opcional)</h3><p>Hacé clic sobre la imagen para marcar el nicho. Podés mover el punto antes de guardar el registro.</p><SatelliteMap position={form.map_x !== '' && form.map_y !== '' ? form : null} onPosition={point => { setForm(current => ({ ...current, ...point })); setValidation(current => ({ ...current, map_x: '' })) }} /><div className="map-coordinates">{[['map_x', 'Posición horizontal (%)'], ['map_y', 'Posición vertical (%)']].map(([name, label]) => <label className="field-control" key={name}><span>{label}</span><input type="number" name={name} min="0" max="100" step="0.01" value={form[name]} onChange={updateField} /></label>)}<button type="button" className="button button-quiet" onClick={() => { setForm(current => ({ ...current, map_x: '', map_y: '' })); setValidation(current => ({ ...current, map_x: '' })) }}>Quitar punto</button></div>{validation.map_x && <p className="field-error" role="alert">{validation.map_x}</p>}</div>
         </section>
         <section className="form-section"><div className="form-section-title"><span className="form-section-number">03</span><div><h2>Observaciones</h2><p>Información adicional, si corresponde.</p></div></div>
           <label className="field-control"><span>Notas</span><textarea name="notes" value={form.notes} onChange={updateField} rows="4" placeholder="Escribí una observación (opcional)" /></label>
@@ -593,6 +597,7 @@ function RecordDetail() {
       <div className="admin-page-heading detail-heading"><div><Link to="/admin/records" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div><Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link></div>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><UserRound size={18} /></span><h2>Datos personales</h2></div><div className="detail-grid"><DetailValue label="Nombre completo" value={record.full_name} /><DetailValue label="CC (conocido como)" value={record.known_as} /><DetailValue label="Fecha de nacimiento" value={formatDate(record.date_of_birth)} /><DetailValue label="Fecha de fallecimiento" value={formatDate(record.date_of_death)} /><DetailValue label="Fecha de sepultura" value={formatDate(record.burial_date)} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><MapPin size={18} /></span><h2>Ubicación</h2></div><div className="detail-grid"><DetailValue label="Sector" value={record.sector} /><DetailValue label="Fila" value={record.row || 'No especificada'} /><DetailValue label="Número de tumba o nicho" value={record.grave_number} /></div></section>
+      <section className="detail-panel satellite-panel"><h2>Ubicación en el plano</h2><SatelliteMap records={[record]} selectedId={record.id} /><p>{record.map_x == null ? 'Este registro todavía no tiene una ubicación marcada en el plano.' : 'El marcador indica la ubicación registrada por la administración.'}</p><Link className="text-link" to="/admin/map">Ver plano completo <ArrowUpRight size={16} /></Link></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><CalendarDays size={18} /></span><h2>Observaciones y registro</h2></div><div className="detail-grid"><DetailValue label="Observaciones" value={record.notes || 'Sin observaciones'} wide /><DetailValue label="Fecha de creación" value={formatDateTime(record.created_at)} /><DetailValue label="Última modificación" value={formatDateTime(record.updated_at)} /></div></section>
       <Link to="/admin/records" className="text-link detail-back"><ArrowLeft size={16} /> Volver al listado</Link>
     </>

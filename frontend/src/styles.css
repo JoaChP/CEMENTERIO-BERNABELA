@@ -453,6 +453,23 @@ button { color: inherit; }
 .form-section-title p { font-size: 14px; line-height: 1.6; }
 .form-section-number { background: #edf5ef; color: #11634f; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; font: 600 13px 'DM Sans',sans-serif; }
 .form-grid { gap: 22px; padding-left: 0; }
+.satellite-map { display: block; position: relative; width: 100%; border: 0; padding: 0; overflow: hidden; border-radius: 12px; background: #e1e9e3; line-height: 0; }
+.satellite-map img { display: block; width: 100%; height: auto; }
+.satellite-editor { cursor: crosshair; }
+.satellite-editor:focus-visible { outline: 3px solid #11634f; outline-offset: 3px; }
+.map-pin { position: absolute; transform: translate(-50%, -50%); border: 2px solid #fff; border-radius: 50%; width: 26px; height: 26px; background: #11634f; color: #fff; box-shadow: 0 2px 8px #0008; line-height: 20px; font-size: 14px; text-align: center; padding: 0; cursor: pointer; }
+.map-pin.selected { background: #f07b24; z-index: 2; outline: 3px solid #fff9; }
+.satellite-panel > p, .form-map p { color: #64756d; line-height: 1.6; font-size: 14px; margin-top: 16px; }
+.form-map { margin-top: 26px; }
+.form-map h3 { font-size: 16px; color: #11634f; }
+.map-coordinates { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-top: 18px; }
+.map-coordinates .field-control { flex: 1 1 180px; }
+.map-records { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 18px; }
+.map-records button { display: flex; flex-direction: column; gap: 8px; text-align: left; border: 1px solid #dfe9e3; border-radius: 10px; padding: 14px; background: #fff; cursor: pointer; }
+.map-records button.selected { background: #edf5ef; border-color: #11634f; }
+.map-records span { color: #64756d; font-size: 13px; }
+.map-selected { padding: 18px; background: #f2f7f4; border-radius: 12px; margin-top: 18px; }
+.map-selected .button { margin: 8px 8px 0 0; }
 .records-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 24px; background: #f8fbf9; border-bottom: 1px solid #dfe9e3; }
 .filter-name { grid-column: span 2; }
 .filter-actions, .export-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }

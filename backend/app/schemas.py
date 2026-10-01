@@ -21,10 +21,12 @@ class DeceasedInput(BaseModel):
     burial_date: date
     sector: str = Field(min_length=1, max_length=120)
     row: str | None = Field(default=None, max_length=120)
-    grave_number: str = Field(min_length=1, max_length=120)
+    grave_number: str | None = Field(default=None, max_length=120)
+    map_x: float | None = Field(default=None, ge=0, le=100)
+    map_y: float | None = Field(default=None, ge=0, le=100)
     notes: str | None = None
 
-    @field_validator("full_name", "sector", "grave_number", mode="before")
+    @field_validator("full_name", "sector", mode="before")
     @classmethod
     def required_text_is_not_blank(cls, value: object) -> object:
         if isinstance(value, str):
@@ -33,7 +35,7 @@ class DeceasedInput(BaseModel):
                 raise ValueError("Este campo es obligatorio.")
         return value
 
-    @field_validator("row", "notes", "known_as", mode="before")
+    @field_validator("row", "notes", "known_as", "grave_number", mode="before")
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         if isinstance(value, str):
@@ -42,6 +44,8 @@ class DeceasedInput(BaseModel):
 
     @model_validator(mode="after")
     def validate_date_order(self) -> "DeceasedInput":
+        if (self.map_x is None) != (self.map_y is None):
+            raise ValueError("La ubicación en el plano requiere ambas coordenadas.")
         if self.date_of_birth and self.date_of_birth > self.date_of_death:
             raise ValueError("La fecha de nacimiento no puede ser posterior al fallecimiento.")
         if self.burial_date < self.date_of_death:
