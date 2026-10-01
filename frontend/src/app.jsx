@@ -275,8 +275,8 @@ function AdminLayout() {
       <div className="admin-shell">
         <aside className="admin-sidebar">
           <span className="sidebar-label">ADMINISTRACIÓN</span>
-          <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
           <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>
+          <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
         <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
