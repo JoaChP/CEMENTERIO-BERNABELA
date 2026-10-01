@@ -35,6 +35,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   X,
 } from 'lucide-react'
@@ -290,6 +291,8 @@ function RecordsPage() {
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS })
   const [downloading, setDownloading] = useState('')
   const [downloadError, setDownloadError] = useState('')
+  const [deletingId, setDeletingId] = useState('')
+  const [refresh, setRefresh] = useState(0)
   const [page, setPage] = useState(1)
   const [data, setData] = useState({ items: [], total: 0, page_size: 10 })
   const [loading, setLoading] = useState(true)
@@ -307,7 +310,7 @@ function RecordsPage() {
       if (active) setError(err.message)
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [filters, page])
+  }, [filters, page, refresh])
 
   const pageCount = Math.max(1, Math.ceil(data.total / data.page_size))
   function searchRecords(event) {
@@ -336,6 +339,22 @@ function RecordsPage() {
       setDownloadError(err.message)
     } finally {
       setDownloading('')
+    }
+  }
+
+  async function deleteRecord(record) {
+    if (!window.confirm(`¿Eliminar el registro de ${record.full_name}? Esta acción elimina todos sus datos y no se puede deshacer.`)) return
+    setDeletingId(record.id)
+    setError('')
+    try {
+      await api.deleteDeceased(record.id)
+      setNotice(`Se eliminó el registro de ${record.full_name}.`)
+      setPage((current) => Math.min(current, Math.max(1, Math.ceil((data.total - 1) / pageSize))))
+      setRefresh((current) => current + 1)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeletingId('')
     }
   }
 
@@ -373,7 +392,7 @@ function RecordsPage() {
                   <td>{formatDate(record.burial_date)}</td>
                   <td>{formatDate(record.date_of_death)}</td>
                   <td><span className="location-cell">{formatLocation(record)}</span></td>
-                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button></div></td>
+                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button><button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button></div></td>
                 </tr>
               ))}
             </tbody>

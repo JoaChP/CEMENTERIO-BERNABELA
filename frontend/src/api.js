@@ -56,6 +56,7 @@ export const api = {
     return request(`/api/deceased?${params}`)
   },
   getDeceased: (id) => request(`/api/deceased/${encodeURIComponent(id)}`),
+  deleteDeceased: (id) => request(`/api/deceased/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   createDeceased: (data) => request('/api/deceased', {
     method: 'POST',
     body: JSON.stringify(data),

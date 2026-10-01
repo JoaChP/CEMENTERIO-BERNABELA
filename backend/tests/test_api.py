@@ -105,3 +105,16 @@ def test_forged_and_expired_sessions_are_rejected(client: TestClient) -> None:
     expired = jwt.encode({'sub': 'admin', 'exp': datetime.now(timezone.utc) - timedelta(minutes=1)}, settings.jwt_secret, algorithm='HS256')
     client.cookies.set(SESSION_COOKIE, expired)
     assert client.get('/api/auth/me').status_code == 401
+
+
+def test_delete_record_requires_admin_and_removes_only_selected(client: TestClient) -> None:
+    assert client.delete('/api/deceased/no-existe').status_code == 401
+    authenticate(client)
+    payload = {'full_name': 'Registro ficticio', 'date_of_death': '2020-05-15', 'burial_date': '2020-05-17', 'sector': 'A', 'grave_number': '1'}
+    first = client.post('/api/deceased', json=payload).json()['id']
+    second = client.post('/api/deceased', json={**payload, 'full_name': 'Otro registro'}).json()['id']
+    assert client.delete(f'/api/deceased/{first}').status_code == 204
+    assert client.get(f'/api/deceased/{first}').status_code == 404
+    assert client.get(f'/api/deceased/{second}').status_code == 200
+    assert client.get('/api/deceased').json()['total'] == 1
+    assert client.delete(f'/api/deceased/{first}').status_code == 404

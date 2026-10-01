@@ -79,3 +79,13 @@ def update_deceased(
     session.commit()
     session.refresh(record)
     return record
+
+
+@router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_deceased(record_id: str, session: Session = Depends(get_session)) -> Response:
+    record = session.get(Deceased, record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="No se encontró el registro solicitado.")
+    session.delete(record)
+    session.commit()
+    return Response(status_code=204)
