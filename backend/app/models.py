@@ -25,6 +25,7 @@ class Deceased(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     full_name: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
+    known_as: Mapped[str | None] = mapped_column(String(200), nullable=True)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     date_of_death: Mapped[date] = mapped_column(Date, nullable=False)
     burial_date: Mapped[date] = mapped_column(Date, nullable=False)

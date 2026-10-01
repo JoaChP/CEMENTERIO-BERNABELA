@@ -50,6 +50,7 @@ def test_create_edit_validation_and_private_listing(client: TestClient) -> None:
     created = created_response.json()
     assert created["full_name"] == record["full_name"]
     assert created["grave_number"] == record["grave_number"]
+    assert created["known_as"] is None
     assert created["created_at"]
     assert created["updated_at"]
     assert created["created_at"].endswith(("Z", "+00:00"))
@@ -60,11 +61,13 @@ def test_create_edit_validation_and_private_listing(client: TestClient) -> None:
     invalid_burial = {**record, "burial_date": "2020-05-14"}
     assert client.put(f"/api/deceased/{created['id']}", json=invalid_burial).status_code == 422
 
-    updated = {**record, "full_name": "Nombre Actualizado", "grave_number": "N-15"}
+    updated = {**record, "full_name": "Nombre Actualizado", "grave_number": "N-15", "known_as": "  Apodo de prueba  "}
     update_response = client.put(f"/api/deceased/{created['id']}", json=updated)
     assert update_response.status_code == 200
     assert update_response.json()["full_name"] == "Nombre Actualizado"
     assert update_response.json()["grave_number"] == "N-15"
+    assert client.get(f"/api/deceased/{created['id']}").json()["known_as"] == "Apodo de prueba"
+    assert client.put(f"/api/deceased/{created['id']}", json={**updated, "known_as": " "}).json()["known_as"] is None
 
     listing = client.get("/api/deceased", params={"search": "Actualizado", "page": 1, "page_size": 10})
     assert listing.status_code == 200

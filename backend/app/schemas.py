@@ -15,6 +15,7 @@ class AdminResponse(BaseModel):
 
 class DeceasedInput(BaseModel):
     full_name: str = Field(min_length=1, max_length=200)
+    known_as: str | None = Field(default=None, max_length=200)
     date_of_birth: date | None = None
     date_of_death: date
     burial_date: date
@@ -32,7 +33,7 @@ class DeceasedInput(BaseModel):
                 raise ValueError("Este campo es obligatorio.")
         return value
 
-    @field_validator("row", "notes", mode="before")
+    @field_validator("row", "notes", "known_as", mode="before")
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         if isinstance(value, str):

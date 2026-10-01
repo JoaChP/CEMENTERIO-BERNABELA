@@ -346,7 +346,7 @@ function RecordsPage() {
 }
 
 const EMPTY_RECORD = {
-  full_name: '', date_of_birth: '', date_of_death: '', burial_date: '', sector: '', row: '', grave_number: '', notes: '',
+  full_name: '', known_as: '', date_of_birth: '', date_of_death: '', burial_date: '', sector: '', row: '', grave_number: '', notes: '',
 }
 
 function DeceasedForm() {
@@ -360,6 +360,10 @@ function DeceasedForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [validation, setValidation] = useState({})
+  const [cedula, setCedula] = useState('')
+  const [lookupLoading, setLookupLoading] = useState(false)
+  const [lookupMessage, setLookupMessage] = useState('')
+  const [lookupNames, setLookupNames] = useState([])
   const dirty = JSON.stringify(form) !== JSON.stringify(original)
   const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && currentLocation.pathname !== nextLocation.pathname)
 
@@ -395,6 +399,32 @@ function DeceasedForm() {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
     if (validation[name]) setValidation((current) => ({ ...current, [name]: '' }))
+  }
+
+  async function lookupIdentity() {
+    const normalized = cedula.replace(/[-\s]/g, '')
+    setLookupNames([])
+    setLookupMessage('')
+    if (!/^[1-9][0-9]{8}$/.test(normalized)) {
+      setLookupMessage('Ingresá una cédula física de Costa Rica de 9 dígitos.')
+      return
+    }
+    setLookupLoading(true)
+    try {
+      const result = await api.lookupIdentity(normalized)
+      setLookupNames(result.names)
+    } catch (err) {
+      setLookupMessage(err.message)
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
+  function applyLookupName(name) {
+    setForm((current) => ({ ...current, full_name: name }))
+    setValidation((current) => ({ ...current, full_name: '' }))
+    setLookupNames([])
+    setLookupMessage('Nombre aplicado. Revisá los datos y completá las fechas manualmente.')
   }
 
   function validate() {
@@ -440,8 +470,18 @@ function DeceasedForm() {
       {error && <div className="alert alert-error form-alert"><CircleHelp size={17} />{error}</div>}
       <form className="deceased-form" onSubmit={handleSubmit} noValidate>
         <section className="form-section"><div className="form-section-title"><span className="form-section-number">01</span><div><h2>Datos personales</h2><p>Información de identificación y fechas.</p></div></div>
+          <div className="identity-lookup">
+            <label className="field-control" htmlFor="lookup-cedula"><span>Cédula para consultar en GoMeta</span><input id="lookup-cedula" value={cedula} disabled={lookupLoading} inputMode="numeric" maxLength={11} placeholder="Ej. 1-1111-1111" onChange={(event) => { setCedula(event.target.value); setLookupNames([]); setLookupMessage('') }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (!lookupLoading) lookupIdentity() } }} /></label>
+            <button className="button button-quiet" type="button" onClick={lookupIdentity} disabled={lookupLoading || saving}>{lookupLoading ? 'Consultando…' : 'Consultar cédula'}<Search size={17} /></button>
+            <p className="lookup-help">Consulta opcional de nombre y apellidos. La fecha de nacimiento se ingresa manualmente. Esta cédula se usa solo para la consulta.</p>
+            <div className="lookup-results" aria-live="polite">
+              {lookupMessage && <p>{lookupMessage}</p>}
+              {lookupNames.length > 0 && <><p>Revisá el nombre encontrado antes de aplicarlo al registro:</p>{lookupNames.map((name) => <div className="lookup-candidate" key={name}><strong>{name}</strong><button className="button button-quiet" type="button" onClick={() => applyLookupName(name)} disabled={saving}>Usar nombre</button></div>)}</>}
+            </div>
+          </div>
           <div className="form-grid">
             <FormField label="Nombre completo" name="full_name" value={form.full_name} onChange={updateField} required error={validation.full_name} placeholder="Nombre y apellido" className="span-two" />
+            <FormField label="CC (conocido como)" name="known_as" value={form.known_as} onChange={updateField} placeholder="Opcional" className="span-two" />
             <FormField label="Fecha de nacimiento" name="date_of_birth" type="date" value={form.date_of_birth} onChange={updateField} error={validation.date_of_birth} />
             <FormField label="Fecha de fallecimiento" name="date_of_death" type="date" value={form.date_of_death} onChange={updateField} required error={validation.date_of_death} />
             <FormField label="Fecha de sepultura" name="burial_date" type="date" value={form.burial_date} onChange={updateField} required error={validation.burial_date} />
@@ -489,7 +529,7 @@ function RecordDetail() {
   return (
     <>
       <div className="admin-page-heading detail-heading"><div><Link to="/admin" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div><Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link></div>
-      <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><UserRound size={18} /></span><h2>Datos personales</h2></div><div className="detail-grid"><DetailValue label="Nombre completo" value={record.full_name} /><DetailValue label="Fecha de nacimiento" value={formatDate(record.date_of_birth)} /><DetailValue label="Fecha de fallecimiento" value={formatDate(record.date_of_death)} /><DetailValue label="Fecha de sepultura" value={formatDate(record.burial_date)} /></div></section>
+      <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><UserRound size={18} /></span><h2>Datos personales</h2></div><div className="detail-grid"><DetailValue label="Nombre completo" value={record.full_name} /><DetailValue label="CC (conocido como)" value={record.known_as} /><DetailValue label="Fecha de nacimiento" value={formatDate(record.date_of_birth)} /><DetailValue label="Fecha de fallecimiento" value={formatDate(record.date_of_death)} /><DetailValue label="Fecha de sepultura" value={formatDate(record.burial_date)} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><MapPin size={18} /></span><h2>Ubicación</h2></div><div className="detail-grid"><DetailValue label="Sector" value={record.sector} /><DetailValue label="Fila" value={record.row || 'No especificada'} /><DetailValue label="Número de tumba o nicho" value={record.grave_number} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><CalendarDays size={18} /></span><h2>Observaciones y registro</h2></div><div className="detail-grid"><DetailValue label="Observaciones" value={record.notes || 'Sin observaciones'} wide /><DetailValue label="Fecha de creación" value={formatDateTime(record.created_at)} /><DetailValue label="Última modificación" value={formatDateTime(record.updated_at)} /></div></section>
       <Link to="/admin" className="text-link detail-back"><ArrowLeft size={16} /> Volver al listado</Link>

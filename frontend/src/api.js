@@ -25,6 +25,7 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  lookupIdentity: (cedula) => request(`/api/identity?${new URLSearchParams({ cedula })}`),
   currentAdmin: () => request('/api/auth/me'),
   login: (username, password) => request('/api/auth/login', {
     method: 'POST',
