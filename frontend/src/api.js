@@ -24,7 +24,26 @@ async function request(path, options = {}) {
   return payload
 }
 
+function filterParams(filters = {}) {
+  return new URLSearchParams(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
+}
+
 export const api = {
+  downloadRecordsPdf: async (filters = {}) => {
+    const response = await fetch(`${API_URL}/api/deceased/export/pdf?${filterParams(filters)}`, { credentials: 'include' })
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'No se pudo descargar el PDF. Intentá nuevamente.')
+    }
+    const url = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = url
+    link.download = Object.values(filters).some(Boolean) ? 'registros-filtrados.pdf' : 'todos-los-registros.pdf'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  },
   lookupIdentity: (cedula) => request(`/api/identity?${new URLSearchParams({ cedula })}`),
   currentAdmin: () => request('/api/auth/me'),
   login: (username, password) => request('/api/auth/login', {
@@ -32,8 +51,8 @@ export const api = {
     body: JSON.stringify({ username, password }),
   }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
-  listDeceased: ({ search = '', page = 1, pageSize = 10 }) => {
-    const params = new URLSearchParams({ search, page: String(page), page_size: String(pageSize) })
+  listDeceased: ({ page = 1, pageSize = 10, ...filters }) => {
+    const params = filterParams({ ...filters, page: String(page), page_size: String(pageSize) })
     return request(`/api/deceased?${params}`)
   },
   getDeceased: (id) => request(`/api/deceased/${encodeURIComponent(id)}`),

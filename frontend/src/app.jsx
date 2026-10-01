@@ -23,6 +23,7 @@ import {
   CircleHelp,
   ClipboardList,
   DoorOpen,
+  Download,
   FilePlus2,
   Flower2,
   LockKeyhole,
@@ -271,7 +272,7 @@ function AdminLayout() {
       <div className="admin-shell">
         <aside className="admin-sidebar">
           <span className="sidebar-label">ADMINISTRACIÓN</span>
-          <NavLink to="/admin" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Registro de difuntos</NavLink>
+          <NavLink to="/admin" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
         <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
@@ -280,11 +281,15 @@ function AdminLayout() {
   )
 }
 
+const EMPTY_FILTERS = { search: '', date_of_birth: '', burial_date: '', date_of_death: '', location: '' }
+
 function RecordsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchInput, setSearchInput] = useState('')
-  const [search, setSearch] = useState('')
+  const [filterInput, setFilterInput] = useState({ ...EMPTY_FILTERS })
+  const [filters, setFilters] = useState({ ...EMPTY_FILTERS })
+  const [downloading, setDownloading] = useState('')
+  const [downloadError, setDownloadError] = useState('')
   const [page, setPage] = useState(1)
   const [data, setData] = useState({ items: [], total: 0, page_size: 10 })
   const [loading, setLoading] = useState(true)
@@ -296,41 +301,76 @@ function RecordsPage() {
     let active = true
     setLoading(true)
     setError('')
-    api.listDeceased({ search, page, pageSize }).then((response) => {
+    api.listDeceased({ ...filters, page, pageSize }).then((response) => {
       if (active) setData({ items: response.items || [], total: response.total || 0, page_size: response.page_size || pageSize })
     }).catch((err) => {
       if (active) setError(err.message)
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [search, page])
+  }, [filters, page])
 
   const pageCount = Math.max(1, Math.ceil(data.total / data.page_size))
   function searchRecords(event) {
     event.preventDefault()
     setPage(1)
-    setSearch(searchInput.trim())
+    setFilters(Object.fromEntries(Object.entries(filterInput).map(([key, value]) => [key, value.trim()])))
+  }
+
+  const hasFilters = Object.values(filters).some(Boolean)
+  const pendingFilters = JSON.stringify(filterInput) !== JSON.stringify(filters)
+  function updateFilter(event) {
+    const { name, value } = event.target
+    setFilterInput((current) => ({ ...current, [name]: value }))
+  }
+  function clearFilters() {
+    setFilterInput({ ...EMPTY_FILTERS })
+    setFilters({ ...EMPTY_FILTERS })
+    setPage(1)
+  }
+  async function downloadPdf(all) {
+    setDownloadError('')
+    setDownloading(all ? 'all' : 'filtered')
+    try {
+      await api.downloadRecordsPdf(all ? {} : filters)
+    } catch (err) {
+      setDownloadError(err.message)
+    } finally {
+      setDownloading('')
+    }
   }
 
   return (
     <>
       <div className="admin-page-heading">
-        <div><span className="eyebrow">GESTIÓN DE REGISTROS</span><h1>Registro de difuntos</h1><p>Consulta y actualización de los registros del cementerio.</p></div>
+        <div><span className="eyebrow">GESTIÓN DE REGISTROS</span><h1>Ver registros</h1><p>Consultá los registros por nombre, fechas o ubicación y descargá un reporte en PDF.</p></div>
         <button className="button button-dark" onClick={() => navigate('/admin/deceased/new')}><FilePlus2 size={17} /> Registrar difunto</button>
       </div>
       {notice && <div className="alert alert-success"><Check size={17} />{notice}<button aria-label="Cerrar aviso" onClick={() => setNotice('')}><X size={16} /></button></div>}
       <section className="records-panel">
         <div className="records-toolbar">
-          <div><h2>Todos los registros</h2><span className="record-count">{data.total} {data.total === 1 ? 'registro' : 'registros'}</span></div>
-          <form className="search-form" onSubmit={searchRecords}><Search size={17} /><input aria-label="Buscar por nombre completo" placeholder="Buscar por nombre completo" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} /><button type="submit">Buscar</button></form>
+          <div><h2>{hasFilters ? 'Resultados de búsqueda' : 'Todos los registros'}</h2><span className="record-count">{loading ? 'Cargando…' : `${data.total} ${data.total === 1 ? 'registro' : 'registros'}`}</span></div>
+          <div className="export-actions"><button type="button" className="button button-quiet" onClick={() => downloadPdf(false)} disabled={Boolean(downloading) || loading || Boolean(error) || pendingFilters}><Download size={16} />{downloading === 'filtered' ? 'Generando…' : 'PDF de resultados'}</button><button type="button" className="button button-quiet" onClick={() => downloadPdf(true)} disabled={Boolean(downloading)}><Download size={16} />{downloading === 'all' ? 'Generando…' : 'PDF de todos'}</button></div>
         </div>
+        <form className="records-filters" onSubmit={searchRecords}>
+          <FormField label="Nombre, apellidos o CC" name="search" value={filterInput.search} onChange={updateFilter} placeholder="Escribí un nombre o apellido" className="filter-name" />
+          <FormField label="Ubicación" name="location" value={filterInput.location} onChange={updateFilter} placeholder="Sector, fila o tumba / nicho" />
+          <FormField label="Fecha de nacimiento" name="date_of_birth" type="date" value={filterInput.date_of_birth} onChange={updateFilter} />
+          <FormField label="Fecha de sepultura" name="burial_date" type="date" value={filterInput.burial_date} onChange={updateFilter} />
+          <FormField label="Fecha de fallecimiento" name="date_of_death" type="date" value={filterInput.date_of_death} onChange={updateFilter} />
+          <div className="filter-actions"><button type="button" className="button button-quiet" onClick={clearFilters}>Limpiar filtros</button><button type="submit" className="button button-dark"><Search size={17} /> Buscar</button></div>
+          <p className="filter-help">Combiná los filtros que necesités. Las fechas buscan coincidencias exactas y el PDF incluye todas las páginas de los resultados.{pendingFilters ? ' Presioná Buscar para aplicar los cambios antes de descargar los resultados.' : ''}</p>
+        </form>
+        {downloadError && <div className="alert alert-error table-alert" role="alert">{downloadError}</div>}
         {error && <div className="alert alert-error table-alert"><CircleHelp size={17} />{error}</div>}
         <div className="table-scroll">
           <table className="records-table">
-            <thead><tr><th>Nombre completo</th><th>Fecha de fallecimiento</th><th>Ubicación</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+            <thead><tr><th>Nombre completo / CC</th><th>Nacimiento</th><th>Sepultura</th><th>Fallecimiento</th><th>Ubicación</th><th><span className="sr-only">Acciones</span></th></tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan="4"><div className="table-state"><span className="spinner" />Cargando registros…</div></td></tr> : data.items.length === 0 ? <tr><td colSpan="4"><div className="table-state empty-state"><span className="empty-icon"><Flower2 size={22} /></span><b>{search ? 'No encontramos coincidencias' : 'Todavía no hay registros'}</b><span>{search ? 'Probá con otro nombre o revisá la escritura.' : 'Los registros aparecerán aquí cuando sean cargados.'}</span></div></td></tr> : data.items.map((record) => (
+              {loading ? <tr><td colSpan="6"><div className="table-state"><span className="spinner" />Cargando registros…</div></td></tr> : data.items.length === 0 ? <tr><td colSpan="6"><div className="table-state empty-state"><span className="empty-icon"><Flower2 size={22} /></span><b>{hasFilters ? 'No encontramos coincidencias' : 'Todavía no hay registros'}</b><span>{hasFilters ? 'Probá con otros filtros o revisá la escritura.' : 'Los registros aparecerán aquí cuando sean cargados.'}</span></div></td></tr> : data.items.map((record) => (
                 <tr key={record.id}>
-                  <td><span className="person-name">{record.full_name}</span></td>
+                  <td><span className="person-name">{record.full_name}</span>{record.known_as && <small className="record-known-as">CC: {record.known_as}</small>}</td>
+                  <td>{formatDate(record.date_of_birth)}</td>
+                  <td>{formatDate(record.burial_date)}</td>
                   <td>{formatDate(record.date_of_death)}</td>
                   <td><span className="location-cell">{formatLocation(record)}</span></td>
                   <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button></div></td>
@@ -482,7 +522,7 @@ function DeceasedForm() {
           <div className="form-grid">
             <FormField label="Nombre completo" name="full_name" value={form.full_name} onChange={updateField} required error={validation.full_name} placeholder="Nombre y apellido" className="span-two" />
             <FormField label="CC (conocido como)" name="known_as" value={form.known_as} onChange={updateField} placeholder="Opcional" className="span-two" />
-            <FormField label="Fecha de nacimiento" name="date_of_birth" type="date" value={form.date_of_birth} onChange={updateField} error={validation.date_of_birth} />
+            <FormField label="Fecha de nacimiento (opcional)" name="date_of_birth" type="date" value={form.date_of_birth} onChange={updateField} error={validation.date_of_birth} />
             <FormField label="Fecha de fallecimiento" name="date_of_death" type="date" value={form.date_of_death} onChange={updateField} required error={validation.date_of_death} />
             <FormField label="Fecha de sepultura" name="burial_date" type="date" value={form.burial_date} onChange={updateField} required error={validation.burial_date} />
           </div>

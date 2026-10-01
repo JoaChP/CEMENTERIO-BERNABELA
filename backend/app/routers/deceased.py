@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from fastapi.responses import Response
 
 from app.core.database import get_session
 from app.dependencies import require_admin
 from app.models import Deceased
 from app.schemas import DeceasedInput, DeceasedPage, DeceasedResponse
+from app.record_filters import RecordFilters
+from app.records_pdf import build_records_pdf
 
 
 router = APIRouter(prefix="/api/deceased", tags=["difuntos"], dependencies=[Depends(require_admin)])
@@ -13,18 +16,13 @@ router = APIRouter(prefix="/api/deceased", tags=["difuntos"], dependencies=[Depe
 
 @router.get("", response_model=DeceasedPage)
 def list_deceased(
-    search: str = Query(default="", max_length=200),
+    filters: RecordFilters = Depends(),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     session: Session = Depends(get_session),
 ) -> DeceasedPage:
-    statement = select(Deceased)
-    count_statement = select(func.count()).select_from(Deceased)
-    normalized_search = search.strip()
-    if normalized_search:
-        matching_name = Deceased.full_name.contains(normalized_search, autoescape=True)
-        statement = statement.where(matching_name)
-        count_statement = count_statement.where(matching_name)
+    statement = filters.apply(select(Deceased))
+    count_statement = filters.apply(select(func.count()).select_from(Deceased))
     total = session.scalar(count_statement) or 0
     items = session.scalars(
         statement.order_by(Deceased.full_name, Deceased.id)
@@ -44,6 +42,16 @@ def create_deceased(
     session.commit()
     session.refresh(record)
     return record
+
+
+@router.get("/export/pdf")
+def export_records_pdf(filters: RecordFilters = Depends(), session: Session = Depends(get_session)):
+    records = session.scalars(filters.apply(select(Deceased)).order_by(Deceased.full_name, Deceased.id)).all()
+    content = build_records_pdf(records, filters)
+    return Response(content, media_type="application/pdf", headers={
+        "Content-Disposition": 'attachment; filename="registros-campo-santo.pdf"',
+        "Cache-Control": "no-store",
+    })
 
 
 @router.get("/{record_id}", response_model=DeceasedResponse)
