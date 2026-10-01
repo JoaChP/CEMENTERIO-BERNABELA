@@ -380,8 +380,8 @@ function RecordsPage() {
           <FormField label="Nombre, apellidos o CC" name="search" value={filterInput.search} onChange={updateFilter} placeholder="Escribí un nombre o apellido" className="filter-name" />
           <FormField label="Ubicación" name="location" value={filterInput.location} onChange={updateFilter} placeholder="Sector, fila o tumba / nicho" />
           <FormField label="Fecha de nacimiento" name="date_of_birth" type="date" value={filterInput.date_of_birth} onChange={updateFilter} />
-          <FormField label="Fecha de sepultura" name="burial_date" type="date" value={filterInput.burial_date} onChange={updateFilter} />
           <FormField label="Fecha de fallecimiento" name="date_of_death" type="date" value={filterInput.date_of_death} onChange={updateFilter} />
+          <FormField label="Fecha de sepultura" name="burial_date" type="date" value={filterInput.burial_date} onChange={updateFilter} />
           <div className="filter-actions"><button type="button" className="button button-quiet" onClick={clearFilters}>Limpiar filtros</button><button type="submit" className="button button-dark"><Search size={17} /> Buscar</button></div>
           <p className="filter-help">Combiná los filtros que necesités. Las fechas buscan coincidencias exactas y el PDF incluye todas las páginas de los resultados.{pendingFilters ? ' Presioná Buscar para aplicar los cambios antes de descargar los resultados.' : ''}</p>
         </form>
@@ -389,14 +389,14 @@ function RecordsPage() {
         {error && <div className="alert alert-error table-alert"><CircleHelp size={17} />{error}</div>}
         <div className="table-scroll">
           <table className="records-table">
-            <thead><tr><th>Nombre completo / CC</th><th>Nacimiento</th><th>Sepultura</th><th>Fallecimiento</th><th>Ubicación</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+            <thead><tr><th>Nombre completo / CC</th><th>Fecha de nacimiento</th><th>Fecha de fallecimiento</th><th>Fecha de sepultura</th><th>Ubicación</th><th><span className="sr-only">Acciones</span></th></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan="6"><div className="table-state"><span className="spinner" />Cargando registros…</div></td></tr> : data.items.length === 0 ? <tr><td colSpan="6"><div className="table-state empty-state"><span className="empty-icon"><Flower2 size={22} /></span><b>{hasFilters ? 'No encontramos coincidencias' : 'Todavía no hay registros'}</b><span>{hasFilters ? 'Probá con otros filtros o revisá la escritura.' : 'Los registros aparecerán aquí cuando sean cargados.'}</span></div></td></tr> : data.items.map((record) => (
                 <tr key={record.id}>
                   <td><span className="person-name">{record.full_name}</span>{record.known_as && <small className="record-known-as">CC: {record.known_as}</small>}</td>
                   <td>{formatDate(record.date_of_birth)}</td>
-                  <td>{formatDate(record.burial_date)}</td>
                   <td>{formatDate(record.date_of_death)}</td>
+                  <td>{formatDate(record.burial_date)}</td>
                   <td><span className="location-cell">{formatLocation(record)}</span></td>
                   <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button><button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button></div></td>
                 </tr>
