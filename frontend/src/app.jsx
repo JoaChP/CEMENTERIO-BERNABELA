@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   createBrowserRouter,
   Link,
@@ -41,7 +42,7 @@ import { api } from './api.js'
 const CONTACT = {
   email: import.meta.env.VITE_CONTACT_EMAIL || '',
   phone: import.meta.env.VITE_CONTACT_PHONE || '',
-  address: import.meta.env.VITE_CONTACT_ADDRESS || '',
+  address: import.meta.env.VITE_CONTACT_ADDRESS || '1.3 km de la plaza de deportes de Bernabela, Santa Cruz, Guanacaste, Costa Rica',
 }
 
 const router = createBrowserRouter([
@@ -79,9 +80,9 @@ function HomePage() {
   return (
     <main className="public-page">
       <header className="public-header">
-        <Link className="brand" to="/" aria-label="Cementerio Bernabela, inicio">
+        <Link className="brand" to="/" aria-label="Campo Santo Nuestra Señora de Fátima, inicio">
           <span className="brand-mark"><Flower2 size={21} strokeWidth={1.65} /></span>
-          <span><b>Cementerio</b><small>BERNABELA</small></span>
+          <span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span>
         </Link>
         <button className="icon-button menu-toggle" aria-label="Abrir menú" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -119,7 +120,7 @@ function HomePage() {
         <div className="intro-content">
           <h2>Un sitio cuidado<br />con <em>respeto</em> y cercanía.</h2>
           <div className="intro-body">
-            <p>Cementerio Bernabela es un espacio de memoria, encuentro y acompañamiento. Cada historia merece ser recordada con dignidad.</p>
+            <p>Campo Santo Nuestra Señora de Fátima es un espacio de memoria, encuentro y acompañamiento. Cada historia merece ser recordada con dignidad.</p>
             <p>Nuestro compromiso es cuidar este lugar y recibir a cada familia con la consideración que merece.</p>
             <a className="text-link" href="#contacto">Estamos para acompañarte <ArrowUpRight size={16} /></a>
           </div>
@@ -141,6 +142,7 @@ function HomePage() {
             <ContactItem icon={<Phone size={18} />} label="Teléfono" value={CONTACT.phone} />
             <ContactItem icon={<Mail size={18} />} label="Correo electrónico" value={CONTACT.email} />
             <ContactItem icon={<MapPin size={18} />} label="Dirección" value={CONTACT.address} />
+            <a className="button button-dark location-link" href="https://www.google.com/maps/search/?api=1&query=10.3128735%2C-85.5668366" target="_blank" rel="noopener noreferrer"><MapPin size={18} /> Ver ubicación en Google Maps <ArrowUpRight size={16} /></a>
             {!CONTACT.phone && !CONTACT.email && !CONTACT.address && (
               <div className="contact-config-note">Los datos de contacto se habilitarán cuando sean configurados por la administración.</div>
             )}
@@ -148,8 +150,13 @@ function HomePage() {
         </div>
       </section>
 
+      <section className="location-section" aria-labelledby="location-title">
+        <div className="location-heading"><span className="eyebrow">CÓMO LLEGAR</span><h2 id="location-title">Nuestra ubicación</h2><p>Encontrá el Campo Santo Nuestra Señora de Fátima en el mapa.</p></div>
+        <iframe title="Ubicación del Campo Santo Nuestra Señora de Fátima" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6665.455269698428!2d-85.57180045714445!3d10.315333564192324!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f9fcb12bd608b37%3A0x67aabdd2e35aca42!2sCementerio%20Bernabela!5e0!3m2!1ses-419!2scr!4v1790890737463!5m2!1ses-419!2scr" width="600" height="450" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+      </section>
+
       <footer className="public-footer">
-        <Link className="brand footer-brand" to="/"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Cementerio</b><small>BERNABELA</small></span></Link>
+        <Link className="brand footer-brand" to="/"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span></Link>
         <span>Un lugar para recordar.</span>
         <Link to="/admin/login" className="footer-admin">Acceso administrativo <ArrowUpRight size={14} /></Link>
       </footer>
@@ -191,7 +198,7 @@ function LoginPage() {
   return (
     <main className="login-page">
       <aside className="login-aside">
-        <Link className="brand brand-light" to="/"><span className="brand-mark"><Flower2 size={21} /></span><span><b>Cementerio</b><small>BERNABELA</small></span></Link>
+        <Link className="brand brand-light" to="/"><span className="brand-mark"><Flower2 size={21} /></span><span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span></Link>
         <div className="login-aside-copy"><span className="eyebrow">GESTIÓN INTERNA</span><h1>Administrar<br />con <em>cuidado.</em></h1><p>Un espacio seguro para gestionar los registros y cuidar la memoria de cada persona.</p></div>
         <div className="aside-note"><ShieldCheck size={16} /> Acceso reservado al personal autorizado</div>
         <div className="login-aside-pattern" aria-hidden="true">✳</div>
@@ -213,7 +220,7 @@ function LoginPage() {
           </form>
           <p className="login-security"><ShieldCheck size={15} /> Conexión protegida. Tus credenciales no se almacenan en este dispositivo.</p>
         </div>
-        <span className="login-footer">Cementerio Bernabela <span>·</span> Administración</span>
+        <span className="login-footer">Campo Santo Nuestra Señora de Fátima <span>·</span> Administración</span>
       </section>
     </main>
   )
@@ -242,15 +249,23 @@ function ProtectedRoute({ children }) {
 function AdminLayout() {
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
   async function handleLogout() {
     setLoggingOut(true)
-    try { await api.logout() } catch { /* El acceso local finaliza aunque falle la red. */ }
-    navigate('/admin/login', { replace: true })
+    setLogoutError('')
+    try {
+      await api.logout()
+      navigate('/admin/login', { replace: true })
+    } catch {
+      setLogoutError('No se pudo cerrar la sesión. Revisá la conexión y volvé a intentarlo.')
+    } finally {
+      setLoggingOut(false)
+    }
   }
   return (
     <div className="admin-app">
       <header className="admin-topbar">
-        <Link className="brand admin-brand" to="/admin"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Cementerio</b><small>BERNABELA</small></span></Link>
+        <Link className="brand admin-brand" to="/admin"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span></Link>
         <div className="admin-top-right"><span className="secure-label"><ShieldCheck size={15} /> Sesión protegida</span><button className="logout-button" onClick={handleLogout} disabled={loggingOut}><LogOut size={16} /><span>{loggingOut ? 'Cerrando…' : 'Cerrar sesión'}</span></button></div>
       </header>
       <div className="admin-shell">
@@ -259,7 +274,7 @@ function AdminLayout() {
           <NavLink to="/admin" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Registro de difuntos</NavLink>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
-        <main className="admin-content"><Outlet /></main>
+        <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
       </div>
     </div>
   )
@@ -403,8 +418,7 @@ function DeceasedForm() {
     try {
       const payload = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, typeof value === 'string' ? value.trim() || null : value]))
       const saved = editing ? await api.updateDeceased(id, payload) : await api.createDeceased(payload)
-      setForm(form)
-      setOriginal(form)
+      flushSync(() => setOriginal(form))
       navigate('/admin', { replace: true, state: { notice: editing ? 'Los cambios se guardaron correctamente.' : 'El registro se creó correctamente.', savedId: saved?.id } })
     } catch (err) {
       setError(err.message)
@@ -488,7 +502,7 @@ function DetailValue({ label, value, wide = false }) {
 }
 
 function NotFoundPage() {
-  return <main className="not-found"><Flower2 size={32} /><span className="eyebrow">CEMENTERIO BERNABELA</span><h1>No encontramos esta página.</h1><Link to="/" className="button button-dark">Volver al inicio <ArrowRight size={16} /></Link></main>
+  return <main className="not-found"><Flower2 size={32} /><span className="eyebrow">CAMPO SANTO NUESTRA SEÑORA DE FÁTIMA</span><h1>No encontramos esta página.</h1><Link to="/" className="button button-dark">Volver al inicio <ArrowRight size={16} /></Link></main>
 }
 
 function formatDate(value) {

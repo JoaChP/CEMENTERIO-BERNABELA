@@ -52,6 +52,8 @@ def test_create_edit_validation_and_private_listing(client: TestClient) -> None:
     assert created["grave_number"] == record["grave_number"]
     assert created["created_at"]
     assert created["updated_at"]
+    assert created["created_at"].endswith(("Z", "+00:00"))
+    assert created["updated_at"].endswith(("Z", "+00:00"))
 
     invalid_birth = {**record, "date_of_birth": "2021-01-01"}
     assert client.post("/api/deceased", json=invalid_birth).status_code == 422
@@ -68,3 +70,35 @@ def test_create_edit_validation_and_private_listing(client: TestClient) -> None:
     assert listing.status_code == 200
     assert listing.json()["total"] == 1
     assert listing.json()["items"][0]["id"] == created["id"]
+
+
+def test_pagination_shared_location_and_search_literals(client: TestClient) -> None:
+    authenticate(client)
+    base = {
+        'date_of_death': '2020-05-15', 'burial_date': '2020-05-17',
+        'sector': 'A', 'grave_number': 'Compartida',
+    }
+    for name in ['Ana', 'Beatriz', 'Nombre % literal']:
+        response = client.post('/api/deceased', json={**base, 'full_name': name})
+        assert response.status_code == 201
+    page = client.get('/api/deceased', params={'page': 2, 'page_size': 1}).json()
+    assert page['total'] == 3
+    assert len(page['items']) == 1
+    assert page['items'][0]['full_name'] == 'Beatriz'
+    literal = client.get('/api/deceased', params={'search': '%'}).json()
+    assert literal['total'] == 1
+    assert literal['items'][0]['full_name'] == 'Nombre % literal'
+    assert client.get('/api/deceased/no-existe').status_code == 404
+    assert client.put('/api/deceased/no-existe', json={**base, 'full_name': 'Ana'}).status_code == 404
+
+
+def test_forged_and_expired_sessions_are_rejected(client: TestClient) -> None:
+    from datetime import datetime, timedelta, timezone
+    import jwt
+    from app.core.config import settings
+    from app.dependencies import SESSION_COOKIE
+    client.cookies.set(SESSION_COOKIE, 'token-inventado')
+    assert client.get('/api/deceased').status_code == 401
+    expired = jwt.encode({'sub': 'admin', 'exp': datetime.now(timezone.utc) - timedelta(minutes=1)}, settings.jwt_secret, algorithm='HS256')
+    client.cookies.set(SESSION_COOKIE, expired)
+    assert client.get('/api/auth/me').status_code == 401

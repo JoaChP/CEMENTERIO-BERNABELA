@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -54,6 +54,12 @@ class DeceasedResponse(DeceasedInput):
     id: str
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("created_at", "updated_at")
+    @classmethod
+    def timestamps_are_utc(cls, value: datetime) -> datetime:
+        # MariaDB and SQLite return naive values for timestamps stored in UTC.
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
 
 
 class DeceasedPage(BaseModel):
