@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   Link,
   NavLink,
+  Navigate,
   Outlet,
   RouterProvider,
   useBlocker,
@@ -58,7 +59,8 @@ const router = createBrowserRouter([
         path: 'admin',
         element: <ProtectedRoute><AdminLayout /></ProtectedRoute>,
         children: [
-          { index: true, element: <RecordsPage /> },
+          { index: true, element: <Navigate to="/admin/records" replace /> },
+          { path: 'records', element: <RecordsPage /> },
           { path: 'deceased/new', element: <DeceasedForm /> },
           { path: 'deceased/:id', element: <RecordDetail /> },
           { path: 'deceased/:id/edit', element: <DeceasedForm /> },
@@ -189,7 +191,7 @@ function LoginPage() {
     setLoading(true)
     try {
       await api.login(username.trim(), password)
-      navigate('/admin', { replace: true })
+      navigate('/admin/records', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -267,13 +269,14 @@ function AdminLayout() {
   return (
     <div className="admin-app">
       <header className="admin-topbar">
-        <Link className="brand admin-brand" to="/admin"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span></Link>
+        <Link className="brand admin-brand" to="/admin/records"><span className="brand-mark"><Flower2 size={19} /></span><span><b>Campo Santo</b><small>Nuestra Señora de Fátima</small></span></Link>
         <div className="admin-top-right"><span className="secure-label"><ShieldCheck size={15} /> Sesión protegida</span><button className="logout-button" onClick={handleLogout} disabled={loggingOut}><LogOut size={16} /><span>{loggingOut ? 'Cerrando…' : 'Cerrar sesión'}</span></button></div>
       </header>
       <div className="admin-shell">
         <aside className="admin-sidebar">
           <span className="sidebar-label">ADMINISTRACIÓN</span>
-          <NavLink to="/admin" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
+          <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
+          <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
         <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
@@ -508,7 +511,7 @@ function DeceasedForm() {
       const payload = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, typeof value === 'string' ? value.trim() || null : value]))
       const saved = editing ? await api.updateDeceased(id, payload) : await api.createDeceased(payload)
       flushSync(() => setOriginal(form))
-      navigate('/admin', { replace: true, state: { notice: editing ? 'Los cambios se guardaron correctamente.' : 'El registro se creó correctamente.', savedId: saved?.id } })
+      navigate('/admin/records', { replace: true, state: { notice: editing ? 'Los cambios se guardaron correctamente.' : 'El registro se creó correctamente.', savedId: saved?.id } })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -517,15 +520,15 @@ function DeceasedForm() {
   }
 
   function cancel() {
-    navigate('/admin')
+    navigate('/admin/records')
   }
 
   if (loading) return <div className="content-loading"><span className="spinner" />Cargando registro…</div>
-  if (editing && error && !form.full_name) return <div className="alert alert-error"><CircleHelp size={17} />{error}<Link to="/admin" className="inline-link">Volver al registro</Link></div>
+  if (editing && error && !form.full_name) return <div className="alert alert-error"><CircleHelp size={17} />{error}<Link to="/admin/records" className="inline-link">Volver al registro</Link></div>
 
   return (
     <>
-      <div className="admin-page-heading form-heading"><div><Link to="/admin" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">{editing ? 'ACTUALIZACIÓN DE DATOS' : 'NUEVO REGISTRO'}</span><h1>{editing ? 'Editar registro' : 'Registrar difunto'}</h1><p>Completá la información requerida para el registro.</p></div></div>
+      <div className="admin-page-heading form-heading"><div><Link to="/admin/records" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">{editing ? 'ACTUALIZACIÓN DE DATOS' : 'NUEVO REGISTRO'}</span><h1>{editing ? 'Editar registro' : 'Registrar difunto'}</h1><p>Completá la información requerida para el registro.</p></div></div>
       {error && <div className="alert alert-error form-alert"><CircleHelp size={17} />{error}</div>}
       <form className="deceased-form" onSubmit={handleSubmit} noValidate>
         <section className="form-section"><div className="form-section-title"><span className="form-section-number">01</span><div><h2>Datos personales</h2><p>Información de identificación y fechas.</p></div></div>
@@ -583,15 +586,15 @@ function RecordDetail() {
     return () => { active = false }
   }, [id])
   if (loading) return <div className="content-loading"><span className="spinner" />Cargando registro…</div>
-  if (error) return <div className="alert alert-error"><CircleHelp size={17} />{error}<Link to="/admin" className="inline-link">Volver al registro</Link></div>
+  if (error) return <div className="alert alert-error"><CircleHelp size={17} />{error}<Link to="/admin/records" className="inline-link">Volver al registro</Link></div>
   if (!record) return null
   return (
     <>
-      <div className="admin-page-heading detail-heading"><div><Link to="/admin" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div><Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link></div>
+      <div className="admin-page-heading detail-heading"><div><Link to="/admin/records" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div><Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link></div>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><UserRound size={18} /></span><h2>Datos personales</h2></div><div className="detail-grid"><DetailValue label="Nombre completo" value={record.full_name} /><DetailValue label="CC (conocido como)" value={record.known_as} /><DetailValue label="Fecha de nacimiento" value={formatDate(record.date_of_birth)} /><DetailValue label="Fecha de fallecimiento" value={formatDate(record.date_of_death)} /><DetailValue label="Fecha de sepultura" value={formatDate(record.burial_date)} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><MapPin size={18} /></span><h2>Ubicación</h2></div><div className="detail-grid"><DetailValue label="Sector" value={record.sector} /><DetailValue label="Fila" value={record.row || 'No especificada'} /><DetailValue label="Número de tumba o nicho" value={record.grave_number} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><CalendarDays size={18} /></span><h2>Observaciones y registro</h2></div><div className="detail-grid"><DetailValue label="Observaciones" value={record.notes || 'Sin observaciones'} wide /><DetailValue label="Fecha de creación" value={formatDateTime(record.created_at)} /><DetailValue label="Última modificación" value={formatDateTime(record.updated_at)} /></div></section>
-      <Link to="/admin" className="text-link detail-back"><ArrowLeft size={16} /> Volver al listado</Link>
+      <Link to="/admin/records" className="text-link detail-back"><ArrowLeft size={16} /> Volver al listado</Link>
     </>
   )
 }
