@@ -56,7 +56,6 @@ def build_records_pdf(records, filters):
             ('Fecha de fallecimiento', date_text(record.date_of_death)),
             ('Fecha de sepultura', date_text(record.burial_date)),
             ('Sector', record.sector), ('Fila', record.row), ('Tumba o nicho', record.grave_number),
-            ('ID del registro', record.id),
             ('Creación (Costa Rica)', timestamp(record.created_at)),
             ('Actualización (Costa Rica)', timestamp(record.updated_at)),
         ]
