@@ -5,8 +5,8 @@ en **Información del difunto**. El grupo **Usuarios** contiene Gestión de usua
 Auditoría y Mi contraseña.
 
 Los administradores gestionan cuentas y consultan el historial. Los operadores
-pueden crear y editar difuntos, consultar el plano y descargar PDF. Solamente los
-administradores eliminan registros. Los permisos se verifican en el backend.
+solo pueden consultar difuntos, el plano y descargar PDF. Solamente los
+administradores crean, editan y eliminan registros. Los permisos se verifican en el backend.
 
 Las cuentas existentes mantienen el rol administrador y permanecen activas.
 Se crean usuarios desde el panel; no existe registro público. La desactivación,

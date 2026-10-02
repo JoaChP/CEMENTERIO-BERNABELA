@@ -22,14 +22,21 @@ def test_roles_audit_and_deleted_record_snapshot(client):
     assert created.status_code == 201
     assert 'password' not in created.json()
     assert client.post('/api/users', json=operator).status_code == 409
+    payload = {'full_name': 'Difunto ficticio', 'date_of_death': '2020-05-15', 'burial_date': '2020-05-17', 'sector': 'A'}
+    record = client.post('/api/deceased', json=payload).json()
     client.cookies.clear()
     assert client.post('/api/auth/login', json={'username': operator['username'], 'password': operator['password']}).status_code == 200
     for endpoint in ['/api/users', '/api/audit']:
         assert client.get(endpoint).status_code == 403
     assert client.post('/api/users', json=operator).status_code == 403
-    payload = {'full_name': 'Difunto ficticio', 'date_of_death': '2020-05-15', 'burial_date': '2020-05-17', 'sector': 'A'}
-    record = client.post('/api/deceased', json=payload).json()
+    assert client.post('/api/deceased', json=payload).status_code == 403
     assert client.delete(f"/api/deceased/{record['id']}").status_code == 403
+    assert client.put(f"/api/deceased/{record['id']}", json=payload).status_code == 403
+    assert client.get('/api/deceased').status_code == 200
+    assert client.get(f"/api/deceased/{record['id']}").status_code == 200
+    assert client.get('/api/deceased/map/records').status_code == 200
+    assert client.get('/api/deceased/export/pdf').status_code == 200
+    client.cookies.clear(); client.cookies.set('bernabela_session', admin_cookie)
     assert client.put(f"/api/deceased/{record['id']}", json={**payload, 'known_as': 'CC de prueba'}).status_code == 200
     client.cookies.clear(); client.cookies.set('bernabela_session', admin_cookie)
     assert client.delete(f"/api/deceased/{record['id']}").status_code == 204
@@ -38,11 +45,11 @@ def test_roles_audit_and_deleted_record_snapshot(client):
     deleted = next(item for item in audit['items'] if item['action'] == 'deceased.delete')
     assert deleted['before']['known_as'] == 'CC de prueba'
     edited = next(item for item in audit['items'] if item['action'] == 'deceased.update')
-    assert edited['actor_username'] == 'operator-test'
+    assert edited['actor_username'] == 'test-admin'
     assert edited['before']['known_as'] is None
     assert 'secret-operator-123' not in json.dumps(audit)
     assert 'password_hash' not in json.dumps(audit)
-    assert client.get('/api/audit', params={'actor':'operator-test'}).json()['total'] == 2
+    assert client.get('/api/audit', params={'actor':'operator-test'}).json()['total'] == 0
     assert client.get('/api/audit', params={'action':'deceased.delete'}).json()['total'] == 1
     assert client.get('/api/audit', params={'start_date':'2099-01-01'}).json()['total'] == 0
 

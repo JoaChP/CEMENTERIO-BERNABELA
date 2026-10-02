@@ -36,7 +36,7 @@ def list_deceased(
 @router.post("", response_model=DeceasedResponse, status_code=status.HTTP_201_CREATED)
 def create_deceased(
     data: DeceasedInput,
-    actor=Depends(require_admin),
+    actor=Depends(require_manager),
     session: Session = Depends(get_session),
 ) -> Deceased:
     record = Deceased(**data.model_dump())
@@ -78,7 +78,7 @@ def get_deceased(
 def update_deceased(
     record_id: str,
     data: DeceasedInput,
-    actor=Depends(require_admin),
+    actor=Depends(require_manager),
     session: Session = Depends(get_session),
 ) -> Deceased:
     record = session.get(Deceased, record_id)

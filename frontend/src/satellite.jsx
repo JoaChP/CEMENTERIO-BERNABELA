@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from './api.js'
+import { AuthContext } from './auth-context.js'
 
 export function SatelliteMap({ records = [], selectedId, onSelect, position, onPosition }) {
   const editable = Boolean(onPosition)
@@ -16,6 +17,7 @@ export function SatelliteMap({ records = [], selectedId, onSelect, position, onP
 }
 
 export default function SatellitePage() {
+  const currentUser = useContext(AuthContext)
   const [records, setRecords] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [search, setSearch] = useState('')
@@ -41,7 +43,7 @@ export default function SatellitePage() {
     {error && <div className="alert alert-error" role="alert">{error}</div>}
     <section className="detail-panel"><label className="field-control"><span>Buscar nombre, CC, sector o nicho</span><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscá un registro para ubicarlo" /></label>
       {loading ? <p>Cargando registros…</p> : <p>{matches.length} registros · {matches.filter(record => record.map_x != null).length} con ubicación marcada</p>}
-      {selected && <div className="map-selected"><strong>{selected.full_name}</strong><p>{selected.sector} · {selected.grave_number || 'Sin número de tumba o nicho'}{selected.map_x == null ? ' · Pendiente de ubicar en el plano' : ''}</p><Link className="button button-quiet" to={`/admin/deceased/${selected.id}`}>Ver registro</Link><Link className="button button-dark" to={`/admin/deceased/${selected.id}/edit`}>Editar ubicación</Link></div>}
+      {selected && <div className="map-selected"><strong>{selected.full_name}</strong><p>{selected.sector} · {selected.grave_number || 'Sin número de tumba o nicho'}{selected.map_x == null ? ' · Pendiente de ubicar en el plano' : ''}</p><Link className="button button-quiet" to={`/admin/deceased/${selected.id}`}>Ver registro</Link>{currentUser?.role === 'administrator' && <Link className="button button-dark" to={`/admin/deceased/${selected.id}/edit`}>Editar ubicación</Link>}</div>}
       <div className="map-records">{matches.map(record => <button type="button" key={record.id} onClick={() => setSelectedId(record.id)} className={selectedId === record.id ? 'selected' : ''}><strong>{record.full_name}</strong><span>{record.sector} · {record.grave_number || 'Sin número'} · {record.map_x == null ? 'Sin marcar' : 'Ubicado'}</span></button>)}</div>
     </section>
   </>

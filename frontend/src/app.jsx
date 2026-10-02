@@ -68,9 +68,9 @@ const router = createBrowserRouter([
           { path: 'users', element: <UsersPage /> },
           { path: 'audit', element: <AuditPage /> },
           { path: 'password', element: <PasswordPage /> },
-          { path: 'deceased/new', element: <DeceasedForm /> },
+          { path: 'deceased/new', element: <ManagerRoute><DeceasedForm /></ManagerRoute> },
           { path: 'deceased/:id', element: <RecordDetail /> },
-          { path: 'deceased/:id/edit', element: <DeceasedForm /> },
+          { path: 'deceased/:id/edit', element: <ManagerRoute><DeceasedForm /></ManagerRoute> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },
@@ -258,6 +258,11 @@ function ProtectedRoute({ children }) {
   return <AuthContext.Provider value={user}>{children}</AuthContext.Provider>
 }
 
+function ManagerRoute({ children }) {
+  const user = useContext(AuthContext)
+  return user?.role === 'administrator' ? children : <Navigate to="/admin/records" replace />
+}
+
 function AdminLayout() {
   const currentUser = useContext(AuthContext)
   const navigate = useNavigate()
@@ -284,7 +289,7 @@ function AdminLayout() {
       <div className="admin-shell">
         <aside className="admin-sidebar">
           <span className="sidebar-label">INFORMACIÓN DEL DIFUNTO</span>
-          <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>
+          {currentUser?.role === 'administrator' && <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>}
           <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
           <NavLink to="/admin/map" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><MapPin size={17} /> Ubicación de nichos</NavLink>
           <span className="sidebar-label sidebar-group">USUARIOS</span>
@@ -380,7 +385,7 @@ function RecordsPage() {
     <>
       <div className="admin-page-heading">
         <div><span className="eyebrow">GESTIÓN DE REGISTROS</span><h1>Ver registros</h1><p>Consultá los registros por nombre, fechas o ubicación y descargá un reporte en PDF.</p></div>
-        <button className="button button-dark" onClick={() => navigate('/admin/deceased/new')}><FilePlus2 size={17} /> Registrar difunto</button>
+        {currentUser?.role === 'administrator' && <button className="button button-dark" onClick={() => navigate('/admin/deceased/new')}><FilePlus2 size={17} /> Registrar difunto</button>}
       </div>
       {notice && <div className="alert alert-success"><Check size={17} />{notice}<button aria-label="Cerrar aviso" onClick={() => setNotice('')}><X size={16} /></button></div>}
       <section className="records-panel">
@@ -410,7 +415,7 @@ function RecordsPage() {
                   <td>{formatDate(record.date_of_death)}</td>
                   <td>{formatDate(record.burial_date)}</td>
                   <td><span className="location-cell">{formatLocation(record)}</span></td>
-                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button>{currentUser?.role === 'administrator' && <button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button>}</div></td>
+                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button>{currentUser?.role === 'administrator' && <button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button>}{currentUser?.role === 'administrator' && <button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button>}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -592,6 +597,7 @@ function FormField({ label, name, value, onChange, type = 'text', required = fal
 }
 
 function RecordDetail() {
+  const currentUser = useContext(AuthContext)
   const { id } = useParams()
   const [record, setRecord] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -606,7 +612,7 @@ function RecordDetail() {
   if (!record) return null
   return (
     <>
-      <div className="admin-page-heading detail-heading"><div><Link to="/admin/records" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div><Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link></div>
+      <div className="admin-page-heading detail-heading"><div><Link to="/admin/records" className="back-link"><ArrowLeft size={15} /> Registro de difuntos</Link><span className="eyebrow">DETALLE DEL REGISTRO</span><h1>{record.full_name}</h1><p>Información registrada en el sistema.</p></div>{currentUser?.role === 'administrator' && <Link className="button button-dark" to={`/admin/deceased/${record.id}/edit`}><Pencil size={16} /> Editar</Link>}</div>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><UserRound size={18} /></span><h2>Datos personales</h2></div><div className="detail-grid"><DetailValue label="Nombre completo" value={record.full_name} /><DetailValue label="CC (conocido como)" value={record.known_as} /><DetailValue label="Fecha de nacimiento" value={formatDate(record.date_of_birth)} /><DetailValue label="Fecha de fallecimiento" value={formatDate(record.date_of_death)} /><DetailValue label="Fecha de sepultura" value={formatDate(record.burial_date)} /></div></section>
       <section className="detail-panel"><div className="detail-section-heading"><span className="detail-icon"><MapPin size={18} /></span><h2>Ubicación</h2></div><div className="detail-grid"><DetailValue label="Sector" value={record.sector} /><DetailValue label="Fila" value={record.row || 'No especificada'} /><DetailValue label="Número de tumba o nicho" value={record.grave_number} /></div></section>
       <section className="detail-panel satellite-panel"><h2>Ubicación en el plano</h2><SatelliteMap records={[record]} selectedId={record.id} /><p>{record.map_x == null ? 'Este registro todavía no tiene una ubicación marcada en el plano.' : 'El marcador indica la ubicación registrada por la administración.'}</p><Link className="text-link" to="/admin/map">Ver plano completo <ArrowUpRight size={16} /></Link></section>
