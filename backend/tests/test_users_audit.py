@@ -2,6 +2,17 @@ import json
 from tests.test_api import authenticate
 
 
+def test_email_username_creation_login_and_clear_validation(client):
+    authenticate(client)
+    payload = {'full_name': 'Prueba correo', 'username': 'prueba+cuenta@example.com', 'password': 'password-prueba-123', 'role': 'operator'}
+    assert client.post('/api/users', json=payload).status_code == 201
+    invalid = client.post('/api/users', json={**payload, 'username': 'usuario con espacios'})
+    assert invalid.status_code == 422
+    assert 'sin espacios' in invalid.json()['detail'][0]['msg']
+    client.cookies.clear()
+    assert client.post('/api/auth/login', json={'username':payload['username'], 'password':payload['password']}).status_code == 200
+
+
 def test_roles_audit_and_deleted_record_snapshot(client):
     assert client.get('/api/users').status_code == 401
     authenticate(client)

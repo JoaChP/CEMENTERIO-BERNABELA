@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -17,9 +17,17 @@ router = APIRouter(prefix='/api/users', tags=['usuarios'])
 class UserInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     full_name: str = Field(min_length=1, max_length=200)
-    username: str = Field(min_length=3, max_length=80, pattern=r'^[a-zA-Z0-9._-]+$')
+    username: str = Field(min_length=3, max_length=80)
     role: Literal['administrator', 'operator'] = 'operator'
     is_active: bool = True
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, value):
+        import re
+        if not re.fullmatch(r'[a-zA-Z0-9.@_+\-]+', value):
+            raise ValueError('Ingresá un usuario o correo sin espacios. Se permiten letras, números, punto, @, +, guion y guion bajo.')
+        return value
 
 
 class UserCreate(UserInput):
