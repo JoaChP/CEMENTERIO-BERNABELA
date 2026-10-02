@@ -532,6 +532,19 @@ button { color: inherit; }
 .map-records span { color: #64756d; font-size: 13px; }
 .map-selected { padding: 18px; background: #f2f7f4; border-radius: 12px; margin-top: 18px; }
 .map-selected .button { margin: 8px 8px 0 0; }
+.niche-map-panel, .niche-search-panel { padding: 28px 32px; margin-bottom: 28px; }
+.niche-map-panel .user-card-heading, .niche-search-panel .user-card-heading { margin-bottom: 24px; }
+.niche-map-panel > .filter-help { margin: 20px 0 0; padding: 16px 18px; background: #f2f7f4; border-radius: 10px; line-height: 1.7; }
+.niche-search-panel > .field-control { max-width: 760px; }
+.niche-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 24px 0; margin-top: 4px; border-bottom: 1px solid #e3ece7; }
+.niche-summary span { font-size: 13px; color: #11634f; background: #edf5ef; padding: 8px 12px; border-radius: 20px; }
+.niche-search-panel .map-records { margin-top: 24px; gap: 18px; }
+.niche-search-panel .map-records button { padding: 22px; gap: 12px; min-height: 96px; background: #fbfdfc; transition: background .15s, border-color .15s; }
+.niche-search-panel .map-records button:hover { border-color: #91b6a5; background: #f1f7f3; }
+.niche-search-panel .map-records button.selected { background: #eaf4ee; border-color: #11634f; }
+.niche-search-panel .map-records strong { font-size: 15px; line-height: 1.5; }
+.niche-search-panel .map-selected { margin-top: 24px; padding: 24px; border: 1px solid #d5e6dc; }
+@media(max-width:700px) { .niche-map-panel, .niche-search-panel { padding: 22px 18px; } .niche-search-panel .map-records { grid-template-columns: 1fr; } }
 .records-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 24px; background: #f8fbf9; border-bottom: 1px solid #dfe9e3; }
 .filter-name { grid-column: span 2; }
 .filter-actions, .export-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
