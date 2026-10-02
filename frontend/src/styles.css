@@ -453,6 +453,20 @@ button { color: inherit; }
 .form-section-title p { font-size: 14px; line-height: 1.6; }
 .form-section-number { background: #edf5ef; color: #11634f; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; font: 600 13px 'DM Sans',sans-serif; }
 .form-grid { gap: 22px; padding-left: 0; }
+.sidebar-group { display: block; margin-top: 28px; }
+.sidebar-user { color: #64756d; font-size: 12px; line-height: 1.7; margin: 18px 10px; overflow-wrap: anywhere; }
+.user-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.field-control select { min-height: 48px; border: 1px solid #dce7e2; border-radius: 10px; background: #fff; padding: 10px 12px; font: inherit; color: #263c33; width: 100%; }
+.user-form .filter-help, .user-form .user-actions { grid-column: 1 / -1; }
+.user-active { display: flex; align-items: center; gap: 10px; }
+.user-actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.user-actions .button { font-size: 13px; }
+.audit-entry { padding: 20px 0; border-bottom: 1px solid #dfe9e3; }
+.audit-entry h3 { font-size: 16px; color: #11634f; }
+.audit-entry p { font-size: 14px; color: #64756d; line-height: 1.6; }
+.audit-entry summary { cursor: pointer; padding: 10px 0; color: #11634f; }
+.records-table td.audit-value { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 160px; max-width: 400px; padding-top: 12px; padding-bottom: 12px; }
+@media(max-width:700px) { .user-form { grid-template-columns: 1fr; } }
 .satellite-map { display: block; position: relative; width: 100%; border: 0; padding: 0; overflow: hidden; border-radius: 12px; background: #e1e9e3; line-height: 0; }
 .satellite-map img { display: block; width: 100%; height: auto; }
 .satellite-editor { cursor: crosshair; }

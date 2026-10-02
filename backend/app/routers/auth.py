@@ -14,18 +14,18 @@ router = APIRouter(prefix="/api/auth", tags=["autenticación"])
 
 
 def admin_response(admin: Administrator) -> AdminResponse:
-    return AdminResponse(id=admin.id, username=admin.username)
+    return AdminResponse(id=admin.id, username=admin.username, full_name=admin.full_name, role=admin.role, is_active=admin.is_active)
 
 
 @router.post("/login", response_model=AdminResponse)
 def login(credentials: AdminLogin, response: Response, session: Session = Depends(get_session)) -> AdminResponse:
     admin = session.scalar(select(Administrator).where(Administrator.username == credentials.username.strip()))
-    if admin is None or not verify_password(credentials.password, admin.password_hash):
+    if admin is None or not admin.is_active or not verify_password(credentials.password, admin.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario o contraseña incorrectos.")
 
     response.set_cookie(
         key=SESSION_COOKIE,
-        value=create_access_token(admin.id),
+        value=create_access_token(admin.id, admin.session_version),
         max_age=settings.session_expire_hours * 60 * 60,
         httponly=True,
         secure=settings.cookie_secure,

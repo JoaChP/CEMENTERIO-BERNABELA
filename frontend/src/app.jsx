@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import {
   createBrowserRouter,
@@ -42,6 +42,8 @@ import {
 } from 'lucide-react'
 import { api } from './api.js'
 import SatellitePage, { SatelliteMap } from './satellite.jsx'
+import { AuthContext } from './auth-context.js'
+import { UsersPage, PasswordPage, AuditPage } from './users.jsx'
 
 const CONTACT = {
   email: import.meta.env.VITE_CONTACT_EMAIL || '',
@@ -63,6 +65,9 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="/admin/records" replace /> },
           { path: 'records', element: <RecordsPage /> },
           { path: 'map', element: <SatellitePage /> },
+          { path: 'users', element: <UsersPage /> },
+          { path: 'audit', element: <AuditPage /> },
+          { path: 'password', element: <PasswordPage /> },
           { path: 'deceased/new', element: <DeceasedForm /> },
           { path: 'deceased/:id', element: <RecordDetail /> },
           { path: 'deceased/:id/edit', element: <DeceasedForm /> },
@@ -234,11 +239,12 @@ function LoginPage() {
 
 function ProtectedRoute({ children }) {
   const [status, setStatus] = useState('checking')
+  const [user, setUser] = useState(null)
   const navigate = useNavigate()
   useEffect(() => {
     let active = true
-    api.currentAdmin().then(() => {
-      if (active) setStatus('ready')
+    api.currentAdmin().then((current) => {
+      if (active) { setUser(current); setStatus('ready') }
     }).catch(() => {
       if (active) {
         setStatus('denied')
@@ -249,10 +255,11 @@ function ProtectedRoute({ children }) {
   }, [navigate])
 
   if (status !== 'ready') return <div className="screen-loading"><span className="spinner" />{status === 'checking' ? 'Verificando acceso…' : 'Redirigiendo…'}</div>
-  return children
+  return <AuthContext.Provider value={user}>{children}</AuthContext.Provider>
 }
 
 function AdminLayout() {
+  const currentUser = useContext(AuthContext)
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
@@ -276,10 +283,14 @@ function AdminLayout() {
       </header>
       <div className="admin-shell">
         <aside className="admin-sidebar">
-          <span className="sidebar-label">ADMINISTRACIÓN</span>
+          <span className="sidebar-label">INFORMACIÓN DEL DIFUNTO</span>
           <NavLink to="/admin/deceased/new" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><FilePlus2 size={17} /> Crear registro</NavLink>
           <NavLink to="/admin/records" end className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ClipboardList size={17} /> Ver registros</NavLink>
           <NavLink to="/admin/map" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><MapPin size={17} /> Ubicación de nichos</NavLink>
+          <span className="sidebar-label sidebar-group">USUARIOS</span>
+          {currentUser?.role === 'administrator' && <><NavLink to="/admin/users" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><UserRound size={17} /> Gestión de usuarios</NavLink><NavLink to="/admin/audit" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><ShieldCheck size={17} /> Auditoría</NavLink></>}
+          <NavLink to="/admin/password" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><LockKeyhole size={17} /> Mi contraseña</NavLink>
+          <p className="sidebar-user">{currentUser?.full_name || currentUser?.username}<br />{currentUser?.role === 'administrator' ? 'Administrador' : 'Operador'}</p>
           <div className="sidebar-bottom"><span className="sidebar-label">SITIO PÚBLICO</span><Link to="/" className="sidebar-public">Ver página principal <ArrowUpRight size={15} /></Link></div>
         </aside>
         <main className="admin-content">{logoutError && <div className="alert alert-error" role="alert">{logoutError}</div>}<Outlet /></main>
@@ -291,6 +302,7 @@ function AdminLayout() {
 const EMPTY_FILTERS = { search: '', date_of_birth: '', burial_date: '', date_of_death: '', location: '' }
 
 function RecordsPage() {
+  const currentUser = useContext(AuthContext)
   const navigate = useNavigate()
   const location = useLocation()
   const [filterInput, setFilterInput] = useState({ ...EMPTY_FILTERS })
@@ -398,7 +410,7 @@ function RecordsPage() {
                   <td>{formatDate(record.date_of_death)}</td>
                   <td>{formatDate(record.burial_date)}</td>
                   <td><span className="location-cell">{formatLocation(record)}</span></td>
-                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button><button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button></div></td>
+                  <td><div className="row-actions"><button title="Ver detalle" aria-label={`Ver detalle de ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}`)}><ArrowUpRight size={17} /></button><button title="Editar" aria-label={`Editar a ${record.full_name}`} onClick={() => navigate(`/admin/deceased/${record.id}/edit`)}><Pencil size={16} /></button>{currentUser?.role === 'administrator' && <button type="button" className="delete-record-button" title="Eliminar registro" aria-label={`Eliminar a ${record.full_name}`} disabled={Boolean(deletingId) || loading} onClick={() => deleteRecord(record)}>{deletingId === record.id ? <span className="spinner" /> : <Trash2 size={16} />}</button>}</div></td>
                 </tr>
               ))}
             </tbody>

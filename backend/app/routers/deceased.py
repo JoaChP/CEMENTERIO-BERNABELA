@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from fastapi.responses import Response
 
 from app.core.database import get_session
-from app.dependencies import require_admin
+from app.dependencies import require_admin, require_manager
+from app.audit import log_action
 from app.models import Deceased
 from app.schemas import DeceasedInput, DeceasedPage, DeceasedResponse
 from app.record_filters import RecordFilters
@@ -35,10 +36,13 @@ def list_deceased(
 @router.post("", response_model=DeceasedResponse, status_code=status.HTTP_201_CREATED)
 def create_deceased(
     data: DeceasedInput,
+    actor=Depends(require_admin),
     session: Session = Depends(get_session),
 ) -> Deceased:
     record = Deceased(**data.model_dump())
     session.add(record)
+    session.flush()
+    log_action(session, actor, 'deceased.create', 'deceased', record.id, record.full_name, after=data.model_dump(mode='json'))
     session.commit()
     session.refresh(record)
     return record
@@ -74,23 +78,28 @@ def get_deceased(
 def update_deceased(
     record_id: str,
     data: DeceasedInput,
+    actor=Depends(require_admin),
     session: Session = Depends(get_session),
 ) -> Deceased:
     record = session.get(Deceased, record_id)
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontró el registro solicitado.")
+    before = DeceasedInput.model_validate(record, from_attributes=True).model_dump(mode='json')
     for field, value in data.model_dump().items():
         setattr(record, field, value)
+    if before != data.model_dump(mode='json'):
+        log_action(session, actor, 'deceased.update', 'deceased', record.id, record.full_name, before, data.model_dump(mode='json'))
     session.commit()
     session.refresh(record)
     return record
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_deceased(record_id: str, session: Session = Depends(get_session)) -> Response:
+def delete_deceased(record_id: str, actor=Depends(require_manager), session: Session = Depends(get_session)) -> Response:
     record = session.get(Deceased, record_id)
     if record is None:
         raise HTTPException(status_code=404, detail="No se encontró el registro solicitado.")
+    log_action(session, actor, 'deceased.delete', 'deceased', record.id, record.full_name, before=DeceasedInput.model_validate(record, from_attributes=True).model_dump(mode='json'))
     session.delete(record)
     session.commit()
     return Response(status_code=204)

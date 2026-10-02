@@ -11,6 +11,9 @@ class AdminLogin(BaseModel):
 class AdminResponse(BaseModel):
     id: str
     username: str
+    full_name: str
+    role: str
+    is_active: bool
 
 
 class DeceasedInput(BaseModel):

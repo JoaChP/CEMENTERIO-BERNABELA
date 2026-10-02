@@ -29,6 +29,12 @@ function filterParams(filters = {}) {
 }
 
 export const api = {
+  listUsers: () => request('/api/users'),
+  createUser: (data) => request('/api/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id, data) => request(`/api/users/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
+  resetPassword: (id, password) => request(`/api/users/${encodeURIComponent(id)}/password`, { method: 'PUT', body: JSON.stringify({ password }) }),
+  changePassword: (data) => request('/api/users/me/password', { method: 'PUT', body: JSON.stringify(data) }),
+  listAudit: (filters) => request(`/api/audit?${filterParams(filters)}`),
   downloadRecordsPdf: async (filters = {}) => {
     const response = await fetch(`${API_URL}/api/deceased/export/pdf?${filterParams(filters)}`, { credentials: 'include' })
     if (!response.ok) {
