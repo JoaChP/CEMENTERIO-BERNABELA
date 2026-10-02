@@ -476,6 +476,12 @@ button { color: inherit; }
 .user-permissions-note p { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: #506057; }
 .user-form-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border-top: 1px solid #e3ece7; padding-top: 24px; }
 .user-form-footer > span { color: #64756d; font-size: 12px; }
+.password-panel { max-width: 760px; padding: 32px; }
+.password-form { grid-template-columns: 1fr; gap: 26px; }
+.password-form > .field-control { max-width: 540px; }
+.password-form .user-form-footer { margin-top: 8px; gap: 20px; }
+.password-panel .alert { margin-bottom: 24px; }
+@media(max-width:700px) { .password-panel { padding: 24px 20px; } .password-form > .field-control { max-width: none; } }
 @media(max-width:700px) { .user-panel { padding: 22px 18px; } .user-section-grid { grid-template-columns: 1fr; } .user-form-footer .user-actions { width: 100%; } }
 .field-control select { min-height: 48px; border: 1px solid #dce7e2; border-radius: 10px; background: #fff; padding: 10px 12px; font: inherit; color: #263c33; width: 100%; }
 .user-form .filter-help, .user-form .user-actions { grid-column: 1 / -1; }
