@@ -456,6 +456,27 @@ button { color: inherit; }
 .sidebar-group { display: block; margin-top: 28px; }
 .sidebar-user { color: #64756d; font-size: 12px; line-height: 1.7; margin: 18px 10px; overflow-wrap: anywhere; }
 .user-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.user-panel { padding: 28px 32px; margin-bottom: 28px; }
+.user-card-heading { margin-bottom: 30px; padding-bottom: 24px; border-bottom: 1px solid #e3ece7; }
+.user-card-heading h2 { margin: 9px 0; font-size: 24px; letter-spacing: -.5px; color: #263c33; }
+.user-card-heading p { margin: 0; color: #64756d; font-size: 14px; line-height: 1.6; }
+.user-account-form { display: flex; flex-direction: column; gap: 32px; }
+.user-form-section { min-width: 0; margin: 0; padding: 0; border: 0; }
+.user-form-section legend { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; font-size: 16px; font-weight: 600; color: #263c33; padding: 0; }
+.user-form-section legend span { display: inline-grid; place-items: center; width: 32px; height: 32px; background: #edf5ef; border-radius: 9px; color: #11634f; font-size: 12px; }
+.user-section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 28px; }
+.user-account-form .field-control small { color: #64756d; font-size: 12px; line-height: 1.6; }
+.user-status-card { align-self: start; padding: 16px 18px; border: 1px solid #e0e9e4; border-radius: 12px; background: #fbfdfc; }
+.user-status-card input { accent-color: #11634f; width: 18px; height: 18px; flex: none; }
+.user-status-card span { display: flex; flex-direction: column; gap: 6px; }
+.user-status-card strong { font-size: 14px; }
+.user-status-card small { color: #64756d; font-size: 12px; line-height: 1.5; }
+.user-permissions-note { grid-column: 1 / -1; background: #f0f7f3; border: 1px solid #dcebe2; border-left: 3px solid #11634f; padding: 18px 20px; border-radius: 10px; }
+.user-permissions-note strong { font-size: 14px; color: #11634f; }
+.user-permissions-note p { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: #506057; }
+.user-form-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border-top: 1px solid #e3ece7; padding-top: 24px; }
+.user-form-footer > span { color: #64756d; font-size: 12px; }
+@media(max-width:700px) { .user-panel { padding: 22px 18px; } .user-section-grid { grid-template-columns: 1fr; } .user-form-footer .user-actions { width: 100%; } }
 .field-control select { min-height: 48px; border: 1px solid #dce7e2; border-radius: 10px; background: #fff; padding: 10px 12px; font: inherit; color: #263c33; width: 100%; }
 .user-form .filter-help, .user-form .user-actions { grid-column: 1 / -1; }
 .user-active { display: flex; align-items: center; gap: 10px; }
